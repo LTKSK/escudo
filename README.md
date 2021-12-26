@@ -11,3 +11,9 @@ tsの型定義から自動で型の絞り込みを行うタイプガード関数
 - [ ] nameとageを持つUserの型ガードを行うisUser関数を生成できるようにする
 - [ ] User[]型を持つGroup型の型ガードを行う関数isGroup関数を生成できるようにする
 
+
+# メモ
+
+- https://ts-ast-viewer.com/#
+- https://tech.mobilefactory.jp/entry/2021/12/10/000000
+
