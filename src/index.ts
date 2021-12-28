@@ -1,3 +1,3 @@
-import * as ts from "typescript";
+import ts from "typescript";
 
-console.log(ts.createProgram);
+console.log(ts.sys);
