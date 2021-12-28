@@ -1,8 +1,7 @@
 import ts from "typescript";
 
-function makeFactorialFunction() {
-  const todoIdentifier = "User";
-  const functionName = ts.factory.createIdentifier(`is${todoIdentifier}`);
+function makeValidate(targetTypeName: string): ts.FunctionDeclaration {
+  const functionName = ts.factory.createIdentifier(`is${targetTypeName}`);
   const paramName = ts.factory.createIdentifier("target");
   const parameter = ts.factory.createParameterDeclaration(
     /*decorators*/ undefined,
@@ -34,7 +33,8 @@ function makeFactorialFunction() {
     ["name", "string"],
     ["age", "number"],
   ];
-  const asserts = todoAttributeAndTypes.map(([attribute, type]) =>
+
+  const asserts = todoAttributeAndTypes.map(([attribute, typeName]) =>
     ts.factory.createIfStatement(
       ts.factory.createBinaryExpression(
         ts.factory.createTypeOfExpression(
@@ -42,14 +42,14 @@ function makeFactorialFunction() {
             ts.factory.createParenthesizedExpression(
               ts.factory.createAsExpression(
                 paramName,
-                ts.factory.createTypeReferenceNode(todoIdentifier, undefined)
+                ts.factory.createTypeReferenceNode(targetTypeName, undefined)
               )
             ),
             attribute
           )
         ),
         ts.SyntaxKind.ExclamationEqualsEqualsToken,
-        ts.factory.createStringLiteral(type)
+        ts.factory.createStringLiteral(typeName)
       ),
       returnFalseBody
     )
@@ -78,9 +78,8 @@ function makeFactorialFunction() {
     ts.factory.createTypePredicateNode(
       undefined,
       paramName,
-      ts.factory.createTypeReferenceNode(todoIdentifier, undefined)
+      ts.factory.createTypeReferenceNode(targetTypeName, undefined)
     ),
-    // ts.factory.createKeywordTypeNode( ts.SyntaxKind.NumberKeyword),
     ts.factory.createBlock(statements, /*multiline*/ true)
   );
 }
@@ -96,7 +95,7 @@ const resultFile = ts.createSourceFile(
 const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 const result = printer.printNode(
   ts.EmitHint.Unspecified,
-  makeFactorialFunction(),
+  makeValidate("User"),
   resultFile
 );
 console.log(result);
