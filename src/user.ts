@@ -13,6 +13,11 @@ function makeFactorialFunction() {
     ts.factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
   );
 
+  const returnFalseBody = ts.factory.createBlock(
+    [ts.factory.createReturnStatement(ts.factory.createFalse())],
+    /*multiline*/ false
+  );
+
   // object
   const isObjectCondition = ts.factory.createBinaryExpression(
     ts.factory.createTypeOfExpression(ts.factory.createIdentifier("target")),
@@ -25,21 +30,29 @@ function makeFactorialFunction() {
     ts.factory.createNull()
   );
   // Userの持つnameのhardコーディング
-  const todoAttribute = "name";
-  const doesNotHaveNameCondition = ts.factory.createBinaryExpression(
-    ts.factory.createTypeOfExpression(
-      ts.factory.createPropertyAccessExpression(
-        ts.factory.createParenthesizedExpression(
-          ts.factory.createAsExpression(
-            paramName,
-            ts.factory.createTypeReferenceNode(todoIdentifier, undefined)
+  const todoAttributeAndTypes = [
+    ["name", "string"],
+    ["age", "number"],
+  ];
+  const asserts = todoAttributeAndTypes.map(([attribute, type]) =>
+    ts.factory.createIfStatement(
+      ts.factory.createBinaryExpression(
+        ts.factory.createTypeOfExpression(
+          ts.factory.createPropertyAccessExpression(
+            ts.factory.createParenthesizedExpression(
+              ts.factory.createAsExpression(
+                paramName,
+                ts.factory.createTypeReferenceNode(todoIdentifier, undefined)
+              )
+            ),
+            attribute
           )
         ),
-        todoAttribute
-      )
-    ),
-    ts.SyntaxKind.ExclamationEqualsEqualsToken,
-    ts.factory.createStringLiteral("string")
+        ts.SyntaxKind.ExclamationEqualsEqualsToken,
+        ts.factory.createStringLiteral(type)
+      ),
+      returnFalseBody
+    )
   );
 
   const condition = ts.factory.createBinaryExpression(
@@ -47,14 +60,10 @@ function makeFactorialFunction() {
     ts.SyntaxKind.BarBarToken,
     notNullCondition
   );
-  const returnFalseBody = ts.factory.createBlock(
-    [ts.factory.createReturnStatement(ts.factory.createFalse())],
-    /*multiline*/ false
-  );
 
   const statements = [
     ts.factory.createIfStatement(condition, returnFalseBody),
-    ts.factory.createIfStatement(doesNotHaveNameCondition, returnFalseBody),
+    ...asserts,
     ts.factory.createReturnStatement(ts.factory.createTrue()),
   ];
 
