@@ -8,12 +8,14 @@ type TypeAliasDeclaration = {
   }[];
 };
 
-function extractTypeAliasDeclaration(file: string): void {
+export function extractTypeAliasDeclaration(
+  file: string
+): TypeAliasDeclaration[] {
   // Create a Program to represent the project, then pull out the
   // source file to parse its AST.
   const program = ts.createProgram([file], { allowJs: true });
   const sourceFile = program.getSourceFile(file);
-  if (!sourceFile) return;
+  if (!sourceFile) return [];
 
   const declarations: TypeAliasDeclaration[] = [];
   ts.forEachChild(sourceFile, (node) => {
@@ -48,9 +50,5 @@ function extractTypeAliasDeclaration(file: string): void {
       }
     }
   });
-  console.log({ declarations });
-  declarations.map((d) => console.log(d.attributes));
+  return declarations;
 }
-
-// Run the extract function with the script's arguments
-extractTypeAliasDeclaration(process.argv[2]);
