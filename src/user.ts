@@ -1,12 +1,12 @@
 console.log("aaa");
 
-type User = {
+export type User = {
   _symbol: symbol;
   name: string;
   age: number;
   isAdmin: boolean;
 };
 
-type Group = {
+export type Group = {
   aaa: number;
 };

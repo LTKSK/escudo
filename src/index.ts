@@ -13,7 +13,7 @@ function makeValidater(
     undefined,
     undefined,
     ts.factory.createImportClause(
-      true,
+      false,
       undefined,
       ts.factory.createNamedImports([
         ts.factory.createImportSpecifier(
@@ -52,7 +52,7 @@ function makeValidater(
   );
   const notNullCondition = ts.factory.createBinaryExpression(
     ts.factory.createIdentifier("target"),
-    ts.SyntaxKind.ExclamationEqualsEqualsToken,
+    ts.SyntaxKind.EqualsEqualsEqualsToken,
     ts.factory.createNull()
   );
 
@@ -88,8 +88,7 @@ function makeValidater(
     ...asserts,
     ts.factory.createReturnStatement(ts.factory.createTrue()),
   ];
-
-  return ts.factory.createFunctionDeclaration(
+  const functionDecralation = ts.factory.createFunctionDeclaration(
     /*decorators*/ undefined,
     /*modifiers*/ [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
     /*asteriskToken*/ undefined,
@@ -104,10 +103,16 @@ function makeValidater(
     ),
     ts.factory.createBlock(statements, /*multiline*/ true)
   );
+
+  return ts.factory.createSourceFile(
+    [importDeclaration, functionDecralation],
+    ts.factory.createToken(ts.SyntaxKind.EndOfFileToken),
+    ts.NodeFlags.None
+  );
 }
 
 const resultFile = ts.createSourceFile(
-  "someFileName.ts",
+  "",
   "",
   ts.ScriptTarget.Latest,
   /*setParentNodes*/ false,
@@ -116,26 +121,27 @@ const resultFile = ts.createSourceFile(
 
 // 引数に渡したpathのファイルを解析する
 const targetFilePath = path.resolve(process.argv[2]);
-const decralations = extractTypeAliasDeclaration(targetFilePath);
-
-const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
-
-const result = decralations.reduce((prev, dec) => {
-  const result = printer.printNode(
-    ts.EmitHint.Unspecified,
-    makeValidater(path.basename(targetFilePath), dec.typeName, dec.attributes),
-    resultFile
-  );
-  if (prev === "") return result;
-  return prev + `\n\n` + result;
-}, "");
-
 const targetFileDir = path.dirname(targetFilePath);
 const targetExt = path.extname(targetFilePath);
 // 対象のファイルの拡張子以外を取得
 const targetFileName = path.basename(targetFilePath).replace(targetExt, "");
 const outputFileName = `${targetFileName}.validators.ts`;
 const outputPath = path.join(targetFileDir, outputFileName);
+
+const decralations = extractTypeAliasDeclaration(targetFilePath);
+
+const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
+const result = decralations.reduce((prev, dec) => {
+  const result = printer.printNode(
+    ts.EmitHint.Unspecified,
+    makeValidater(targetFileName, dec.typeName, dec.attributes),
+    resultFile
+  );
+  if (prev === "") return result;
+  return prev + `\n\n` + result;
+}, "");
+
+console.log(result);
 
 const typeFile = fs.openSync(outputPath, "w+");
 fs.writeFileSync(typeFile, result);
