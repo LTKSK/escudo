@@ -1,5 +1,6 @@
 export type Group = {
   ids: number[];
+  names: string[];
 };
 
 function is(target: unknown): target is Group {

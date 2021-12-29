@@ -7,7 +7,7 @@ ts の型定義から自動で型の絞り込みを行うタイプガード関�
 - [x] ts の compilerAPI の環境構築する
 - [x] compilerAPI について学ぶ
   - [document](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API)
-  - [ ] ast を覚える
+  - [x] ast を覚える
   - [x] compilerAPI を使って `console.log("Hello world!")` をファイルに出力する
 - [x] name と age を持つ User 型の判定を行う isUser のコードを ast から生成できるようにする
 - [x] name と age を持つ type User 型を parse するコードを書く

@@ -182,20 +182,24 @@ function makeValidater(
     notNullCondition
   );
 
-  const guardIfStatements = attributes.map(({ name, type }) => {
-    switch (type.kind) {
-      case "primitive":
-        return guardPrimitiveIfStatement(paramName, targetTypeName, name, type);
-      case "array":
-        // return guardArrayIfStatement(paramName, targetTypeName, name);
-        return guardArrayParamsIfStatement(
-          paramName,
-          targetTypeName,
-          name,
-          type
-        );
-    }
-  });
+  const guardIfStatements = attributes
+    .map(({ name, type }) => {
+      switch (type.kind) {
+        case "primitive":
+          return guardPrimitiveIfStatement(
+            paramName,
+            targetTypeName,
+            name,
+            type
+          );
+        case "array":
+          return [
+            guardArrayIfStatement(paramName, targetTypeName, name),
+            guardArrayParamsIfStatement(paramName, targetTypeName, name, type),
+          ];
+      }
+    })
+    .flat();
 
   const statements = [
     ts.factory.createIfStatement(condition, returnFalseBody()),
