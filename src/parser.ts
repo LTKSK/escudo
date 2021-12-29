@@ -24,29 +24,38 @@ export function extractTypeAliasDeclaration(
       const attributes: TypeAliasDeclaration["attributes"] = [];
       node.forEachChild((child) => {
         if (!ts.isTypeLiteralNode(child)) return;
-        child.members.forEach((m) => {
-          if (!ts.isPropertySignature(m)) return;
+        child.members.forEach((member) => {
+          if (!ts.isPropertySignature(member)) return;
           // type定義がundefinedでも無視
-          if (!m.type) return;
+          if (!member.type) return;
           // symbolの型は無視する
-          if (m.type.kind === ts.SyntaxKind.SymbolKeyword) return;
+          if (member.type.kind === ts.SyntaxKind.SymbolKeyword) return;
 
-          if (ts.isToken(m.type)) {
+          if (ts.isToken(member.type)) {
             // literalだったらここでpush
-            const type = ts.tokenToString(m.type.kind);
-            if (ts.isIdentifier(m.name) && type) {
+            const type = ts.tokenToString(member.type.kind);
+            if (ts.isIdentifier(member.name) && type) {
               attributes.push({
-                name: String(m.name.escapedText),
+                name: String(member.name.escapedText),
                 type: { kind: "primitive", name: type },
               });
             }
-          } else if (ts.isArrayTypeNode(m.type)) {
-            if (ts.isToken(m.type.elementType)) {
-              console.log(ts.tokenToString(m.type.elementType.kind));
-              //   attributes.push({
-              //     name: String(m.name.escapedText),
-              //     type: { kind: "primitive", name: type },
-              //   });
+          } else if (ts.isArrayTypeNode(member.type)) {
+            // number[]やstring[]といった型定義のparse
+            const { elementType } = member.type;
+            const typeName = ts.tokenToString(elementType.kind);
+            if (
+              typeName &&
+              ts.isToken(elementType) &&
+              ts.isIdentifier(member.name)
+            ) {
+              attributes.push({
+                name: String(member.name.escapedText),
+                type: {
+                  kind: "array",
+                  name: typeName,
+                },
+              });
             }
             // TODO tokenじゃない場合は定義済みの型の名前のIdentifierが入っている
           }
@@ -63,5 +72,5 @@ export function extractTypeAliasDeclaration(
   return declarations;
 }
 
-const decralations = extractTypeAliasDeclaration(process.argv[2]);
-console.dir(decralations, { depth: null });
+// const decralations = extractTypeAliasDeclaration(process.argv[2]);
+// console.dir(decralations, { depth: null });

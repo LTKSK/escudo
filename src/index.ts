@@ -1,7 +1,133 @@
-import ts from "typescript";
+import ts, { factory } from "typescript";
 import fs from "fs";
 import path from "path";
 import { extractTypeAliasDeclaration, TypeAliasDeclaration } from "./parser";
+
+function returnFalseBody() {
+  return ts.factory.createBlock(
+    [ts.factory.createReturnStatement(ts.factory.createFalse())],
+    /*multiline*/ false
+  );
+}
+
+function guardPrimitiveIfStatement(
+  paramName: ts.Identifier,
+  targetTypeName: string,
+  name: string,
+  type: TypeAliasDeclaration["attributes"][number]["type"]
+) {
+  return ts.factory.createIfStatement(
+    ts.factory.createBinaryExpression(
+      ts.factory.createTypeOfExpression(
+        ts.factory.createPropertyAccessExpression(
+          ts.factory.createParenthesizedExpression(
+            ts.factory.createAsExpression(
+              paramName,
+              ts.factory.createTypeReferenceNode(targetTypeName, undefined)
+            )
+          ),
+          name
+        )
+      ),
+      ts.SyntaxKind.ExclamationEqualsEqualsToken,
+      ts.factory.createStringLiteral(type.name)
+    ),
+    returnFalseBody()
+  );
+}
+
+function guardArrayIfStatement(
+  paramName: ts.Identifier,
+  targetTypeName: string,
+  name: string
+) {
+  return ts.factory.createIfStatement(
+    ts.factory.createPrefixUnaryExpression(
+      ts.SyntaxKind.ExclamationToken,
+      ts.factory.createCallExpression(
+        ts.factory.createPropertyAccessExpression(
+          ts.factory.createIdentifier("Array"),
+          ts.factory.createIdentifier("isArray")
+        ),
+        undefined,
+        [
+          ts.factory.createPropertyAccessExpression(
+            ts.factory.createParenthesizedExpression(
+              ts.factory.createAsExpression(
+                paramName,
+                ts.factory.createTypeReferenceNode(
+                  ts.factory.createIdentifier(targetTypeName),
+                  undefined
+                )
+              )
+            ),
+            ts.factory.createIdentifier(name)
+          ),
+        ]
+      )
+    ),
+    returnFalseBody()
+  );
+}
+
+function guardArrayParamsIfStatement(
+  paramName: ts.Identifier,
+  targetTypeName: string,
+  name: string,
+  type: TypeAliasDeclaration["attributes"][number]["type"]
+) {
+  return ts.factory.createIfStatement(
+    ts.factory.createPrefixUnaryExpression(
+      ts.SyntaxKind.ExclamationToken,
+      ts.factory.createCallExpression(
+        ts.factory.createPropertyAccessExpression(
+          ts.factory.createPropertyAccessExpression(
+            ts.factory.createParenthesizedExpression(
+              ts.factory.createAsExpression(
+                paramName,
+                ts.factory.createTypeReferenceNode(
+                  ts.factory.createIdentifier(targetTypeName),
+                  undefined
+                )
+              )
+            ),
+            ts.factory.createIdentifier(name)
+          ),
+          ts.factory.createIdentifier("every")
+        ),
+        undefined,
+        [
+          ts.factory.createArrowFunction(
+            undefined,
+            undefined,
+            [
+              ts.factory.createParameterDeclaration(
+                undefined,
+                undefined,
+                undefined,
+                factory.createIdentifier("value"),
+                undefined,
+                undefined,
+                undefined
+              ),
+            ],
+            undefined,
+            ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+            ts.factory.createBinaryExpression(
+              ts.factory.createTypeOfExpression(
+                ts.factory.createIdentifier("value")
+              ),
+              ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+              ts.factory.createStringLiteral(type.name)
+            )
+          ),
+        ]
+      )
+    ),
+    returnFalseBody(),
+    undefined
+  );
+}
 
 function makeValidater(
   srcFileName: string,
@@ -39,11 +165,6 @@ function makeValidater(
     ts.factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
   );
 
-  const returnFalseBody = ts.factory.createBlock(
-    [ts.factory.createReturnStatement(ts.factory.createFalse())],
-    /*multiline*/ false
-  );
-
   // object
   const isObjectCondition = ts.factory.createBinaryExpression(
     ts.factory.createTypeOfExpression(ts.factory.createIdentifier("target")),
@@ -55,37 +176,30 @@ function makeValidater(
     ts.SyntaxKind.EqualsEqualsEqualsToken,
     ts.factory.createNull()
   );
-
-  const asserts = attributes.map(({ name, type }) =>
-    ts.factory.createIfStatement(
-      ts.factory.createBinaryExpression(
-        ts.factory.createTypeOfExpression(
-          ts.factory.createPropertyAccessExpression(
-            ts.factory.createParenthesizedExpression(
-              ts.factory.createAsExpression(
-                paramName,
-                ts.factory.createTypeReferenceNode(targetTypeName, undefined)
-              )
-            ),
-            name
-          )
-        ),
-        ts.SyntaxKind.ExclamationEqualsEqualsToken,
-        ts.factory.createStringLiteral(type.name)
-      ),
-      returnFalseBody
-    )
-  );
-
   const condition = ts.factory.createBinaryExpression(
     isObjectCondition,
     ts.SyntaxKind.BarBarToken,
     notNullCondition
   );
 
+  const guardIfStatements = attributes.map(({ name, type }) => {
+    switch (type.kind) {
+      case "primitive":
+        return guardPrimitiveIfStatement(paramName, targetTypeName, name, type);
+      case "array":
+        // return guardArrayIfStatement(paramName, targetTypeName, name);
+        return guardArrayParamsIfStatement(
+          paramName,
+          targetTypeName,
+          name,
+          type
+        );
+    }
+  });
+
   const statements = [
-    ts.factory.createIfStatement(condition, returnFalseBody),
-    ...asserts,
+    ts.factory.createIfStatement(condition, returnFalseBody()),
+    ...guardIfStatements,
     ts.factory.createReturnStatement(ts.factory.createTrue()),
   ];
   const functionDecralation = ts.factory.createFunctionDeclaration(
@@ -129,7 +243,6 @@ const outputFileName = `${targetFileName}.validators.ts`;
 const outputPath = path.join(targetFileDir, outputFileName);
 
 const decralations = extractTypeAliasDeclaration(targetFilePath);
-
 const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 const result = decralations.reduce((prev, dec) => {
   const result = printer.printNode(
