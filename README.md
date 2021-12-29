@@ -1,19 +1,19 @@
 # escudo
 
-tsの型定義から自動で型の絞り込みを行うタイプガード関数を生成する
+ts の型定義から自動で型の絞り込みを行うタイプガード関数を生成する
 
 # TODO
 
-- [x] tsのcompilerAPIの環境構築する
-- [x] compilerAPIについて学ぶ
+- [x] ts の compilerAPI の環境構築する
+- [x] compilerAPI について学ぶ
   - [document](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API)
-  - [ ] astを覚える
-  - [x] compilerAPIを使って `console.log("Hello world!")` をファイルに出力する
-- [ ] nameとageを持つUser型の判定を行うisUserのコードをastから生成できるようにする
-- [ ] nameとageを持つtype User型をparseするコードを書く
-  - interfaceは一旦後回し
-  - parseした結果、型の名前
-- [ ] User[]型を持つGroup型の型ガードを行う関数isGroup関数を生成できるようにする
+  - [ ] ast を覚える
+  - [x] compilerAPI を使って `console.log("Hello world!")` をファイルに出力する
+- [x] name と age を持つ User 型の判定を行う isUser のコードを ast から生成できるようにする
+- [ ] name と age を持つ type User 型を parse するコードを書く
+  - interface は一旦後回し
+  - parse した結果、型の名前と型情報を取得する
+- [ ] User[]型を持つ Group 型の型ガードを行う関数 isGroup 関数を生成できるようにする
 
 # 参考
 
@@ -22,7 +22,5 @@ tsの型定義から自動で型の絞り込みを行うタイプガード関数
 
 # memo
 
-- typeの型定義は `TypeAliasDeclaration`
+- type の型定義は `TypeAliasDeclaration`
 - createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)で、引数の型を定義できる
-
-
