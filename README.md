@@ -19,6 +19,8 @@ ts の型定義から自動で型の絞り込みを行うタイプガード関�
 
 - https://ts-ast-viewer.com/#
 - https://tech.mobilefactory.jp/entry/2021/12/10/000000
+- https://github.com/microsoft/TypeScript/blob/7c14aff09383f3814d7aae1406b5b2707b72b479/lib/typescript.d.ts#L78
+  - SyntaxKind の enum の定義
 
 # memo
 

@@ -1,36 +1,56 @@
 import ts from "typescript";
 
-/**
- * Prints out particular nodes from a source file
- *
- * @param file a path to a file
- * @param identifiers top level identifiers available
- */
-function extract(file: string, identifiers: string[]): void {
+type TypeAliasDeclaration = {
+  typeName: string;
+  attributes: {
+    name: string;
+    type: string;
+  }[];
+};
+
+function extractTypeAliasDeclaration(file: string): void {
   // Create a Program to represent the project, then pull out the
   // source file to parse its AST.
   const program = ts.createProgram([file], { allowJs: true });
   const sourceFile = program.getSourceFile(file);
   if (!sourceFile) return;
 
+  const declarations: TypeAliasDeclaration[] = [];
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isTypeAliasDeclaration(node)) {
+      const typeName = String(node.name.escapedText);
+      const attributes: TypeAliasDeclaration["attributes"] = [];
       node.forEachChild((child) => {
-        if (ts.isTypeLiteralNode(child)) {
-          //console.log({ members: child.members });
-          child.members.forEach((m) => {
-            if (ts.isPropertySignature(m)) {
-              console.log({
-                name: ts.isIdentifier(m.name) ? m.name.escapedText : "none",
-                type: m.type ? ts.tokenToString(m.type.kind) : "none type",
-              });
-            }
-          });
-        }
+        if (!ts.isTypeLiteralNode(child)) return;
+
+        child.members.forEach((m) => {
+          if (!ts.isPropertySignature(m)) return;
+          // type定義がundefinedでも無視
+          if (!m.type) return;
+          // symbolの型は無視する
+          if (m.type.kind === ts.SyntaxKind.SymbolKeyword) return;
+
+          // literalだったらここでpush
+          const type = ts.tokenToString(m.type.kind);
+          if (ts.isIdentifier(m.name) && type) {
+            attributes.push({
+              name: String(m.name.escapedText),
+              type,
+            });
+          }
+          // literal以外は再帰の必要あり
+        });
       });
+
+      // TODO: attributesが空だったら無視する
+      if (attributes.length > 0) {
+        declarations.push({ typeName, attributes });
+      }
     }
   });
+  console.log({ declarations });
+  declarations.map((d) => console.log(d.attributes));
 }
 
 // Run the extract function with the script's arguments
-extract(process.argv[2], process.argv.slice(3));
+extractTypeAliasDeclaration(process.argv[2]);
