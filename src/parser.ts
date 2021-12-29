@@ -1,10 +1,10 @@
 import ts from "typescript";
 
-type TypeAliasDeclaration = {
+export type TypeAliasDeclaration = {
   typeName: string;
   attributes: {
     name: string;
-    type: string;
+    type: { kind: "primitive"; name: string } | { kind: "array"; name: string };
   }[];
 };
 
@@ -24,7 +24,6 @@ export function extractTypeAliasDeclaration(
       const attributes: TypeAliasDeclaration["attributes"] = [];
       node.forEachChild((child) => {
         if (!ts.isTypeLiteralNode(child)) return;
-
         child.members.forEach((m) => {
           if (!ts.isPropertySignature(m)) return;
           // type定義がundefinedでも無視
@@ -32,13 +31,24 @@ export function extractTypeAliasDeclaration(
           // symbolの型は無視する
           if (m.type.kind === ts.SyntaxKind.SymbolKeyword) return;
 
-          // literalだったらここでpush
-          const type = ts.tokenToString(m.type.kind);
-          if (ts.isIdentifier(m.name) && type) {
-            attributes.push({
-              name: String(m.name.escapedText),
-              type,
-            });
+          if (ts.isToken(m.type)) {
+            // literalだったらここでpush
+            const type = ts.tokenToString(m.type.kind);
+            if (ts.isIdentifier(m.name) && type) {
+              attributes.push({
+                name: String(m.name.escapedText),
+                type: { kind: "primitive", name: type },
+              });
+            }
+          } else if (ts.isArrayTypeNode(m.type)) {
+            if (ts.isToken(m.type.elementType)) {
+              console.log(ts.tokenToString(m.type.elementType.kind));
+              //   attributes.push({
+              //     name: String(m.name.escapedText),
+              //     type: { kind: "primitive", name: type },
+              //   });
+            }
+            // TODO tokenじゃない場合は定義済みの型の名前のIdentifierが入っている
           }
           // literal以外は再帰の必要あり
         });
@@ -52,3 +62,6 @@ export function extractTypeAliasDeclaration(
   });
   return declarations;
 }
+
+const decralations = extractTypeAliasDeclaration(process.argv[2]);
+console.dir(decralations, { depth: null });

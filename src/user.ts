@@ -6,7 +6,3 @@ export type User = {
   age: number;
   isAdmin: boolean;
 };
-
-export type Group = {
-  aaa: number;
-};

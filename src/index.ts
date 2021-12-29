@@ -1,12 +1,12 @@
 import ts from "typescript";
 import fs from "fs";
 import path from "path";
-import { extractTypeAliasDeclaration } from "./parser";
+import { extractTypeAliasDeclaration, TypeAliasDeclaration } from "./parser";
 
 function makeValidater(
   srcFileName: string,
   targetTypeName: string,
-  attributes: { name: string; type: string }[]
+  attributes: TypeAliasDeclaration["attributes"]
 ) {
   // import定義
   const importDeclaration = ts.factory.createImportDeclaration(
@@ -71,7 +71,7 @@ function makeValidater(
           )
         ),
         ts.SyntaxKind.ExclamationEqualsEqualsToken,
-        ts.factory.createStringLiteral(type)
+        ts.factory.createStringLiteral(type.name)
       ),
       returnFalseBody
     )
