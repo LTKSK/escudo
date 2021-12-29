@@ -10,9 +10,12 @@ ts の型定義から自動で型の絞り込みを行うタイプガード関�
   - [ ] ast を覚える
   - [x] compilerAPI を使って `console.log("Hello world!")` をファイルに出力する
 - [x] name と age を持つ User 型の判定を行う isUser のコードを ast から生成できるようにする
-- [ ] name と age を持つ type User 型を parse するコードを書く
+- [x] name と age を持つ type User 型を parse するコードを書く
   - interface は一旦後回し
   - parse した結果、型の名前と型情報を取得する
+- [x] 生成した関数をファイルに書き出す
+  - [ ] 生成したファイルで元にしたファイルの型情報を import する
+- [ ] number[]や string[]といった配列型を parse できるようにする
 - [ ] User[]型を持つ Group 型の型ガードを行う関数 isGroup 関数を生成できるようにする
 
 # 参考

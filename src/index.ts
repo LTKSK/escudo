@@ -1,10 +1,33 @@
 import ts from "typescript";
+import fs from "fs";
+import path from "path";
 import { extractTypeAliasDeclaration } from "./parser";
 
-function makeValidate(
+function makeValidater(
+  srcFileName: string,
   targetTypeName: string,
   attributes: { name: string; type: string }[]
-): ts.FunctionDeclaration {
+) {
+  // import定義
+  const importDeclaration = ts.factory.createImportDeclaration(
+    undefined,
+    undefined,
+    ts.factory.createImportClause(
+      true,
+      undefined,
+      ts.factory.createNamedImports([
+        ts.factory.createImportSpecifier(
+          true,
+          undefined,
+          ts.factory.createIdentifier(targetTypeName)
+        ),
+      ])
+    ),
+    ts.factory.createStringLiteral(`./${srcFileName}`),
+    undefined
+  );
+
+  //関数定義
   const functionName = ts.factory.createIdentifier(`is${targetTypeName}`);
   const paramName = ts.factory.createIdentifier("target");
   const parameter = ts.factory.createParameterDeclaration(
@@ -92,15 +115,27 @@ const resultFile = ts.createSourceFile(
 );
 
 // 引数に渡したpathのファイルを解析する
-const decralations = extractTypeAliasDeclaration(process.argv[2]);
+const targetFilePath = path.resolve(process.argv[2]);
+const decralations = extractTypeAliasDeclaration(targetFilePath);
 
 const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
-decralations.forEach((dec) => {
+const result = decralations.reduce((prev, dec) => {
   const result = printer.printNode(
     ts.EmitHint.Unspecified,
-    makeValidate(dec.typeName, dec.attributes),
+    makeValidater(path.basename(targetFilePath), dec.typeName, dec.attributes),
     resultFile
   );
-  console.log(result);
-});
+  if (prev === "") return result;
+  return prev + `\n\n` + result;
+}, "");
+
+const targetFileDir = path.dirname(targetFilePath);
+const targetExt = path.extname(targetFilePath);
+// 対象のファイルの拡張子以外を取得
+const targetFileName = path.basename(targetFilePath).replace(targetExt, "");
+const outputFileName = `${targetFileName}.validators.ts`;
+const outputPath = path.join(targetFileDir, outputFileName);
+
+const typeFile = fs.openSync(outputPath, "w+");
+fs.writeFileSync(typeFile, result);
